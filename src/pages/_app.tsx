@@ -1,7 +1,7 @@
-import '../styles/global.css';
+import "../styles/global.css";
 
-import type { AppProps } from 'next/app';
-import dynamic from 'next/dynamic';
+import type { AppProps } from "next/app";
+import dynamic from "next/dynamic";
 
 const MyApp = ({ Component, pageProps }: AppProps) => (
   <Component {...pageProps} />

@@ -21,3 +21,9 @@ a:hover {
 .content ul {
   @apply my-6;
 }
+
+.cell-button {
+  width: 30px;
+  height: 30px;
+  background-color: grey;
+}
