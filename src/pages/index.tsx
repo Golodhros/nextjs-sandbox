@@ -6,12 +6,12 @@ const Index = () => {
     <Main
       meta={
         <Meta
-          title="Next.js Sandbox"
-          description="Next.js Sandbox page description"
+          title="Marco Experiences"
+          description="Marco Experiences page description"
         />
       }
     >
-      <h2 className="text-2xl font-bold">H2 Title</h2>
+      <h2 className="text-2xl font-bold">Marco Experiences Sandbox</h2>
       <p>Paragraph text</p>
       <h3 className="text-lg font-semibold">H3 heading</h3>
       <p>Paragraph text</p>
