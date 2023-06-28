@@ -36,6 +36,7 @@
         "project": "./tsconfig.json"
       },
       "rules": {
+        "quotes": [2, "single"],
         "prettier/prettier": [
           "error",
           {
