@@ -1,5 +1,8 @@
 // import Link from "next/link";
 import type { ReactNode } from 'react';
+import Col from 'react-bootstrap/Col';
+import Container from 'react-bootstrap/Container';
+import Row from 'react-bootstrap/Row';
 
 type IWebAppProps = {
   meta: ReactNode;
@@ -8,16 +11,21 @@ type IWebAppProps = {
 };
 
 const WebApp = (props: IWebAppProps) => (
-  <div className="w-full px-1 text-gray-700 antialiased">
+  <Container>
     {props.meta}
-
-    <div className="mx-auto max-w-screen-md">
-      <header className="">
-        <h1 className="text-3xl font-bold text-gray-900">{props.title}</h1>
-      </header>
-      <main className="content py-5 text-xl">{props.children}</main>
-    </div>
-  </div>
+    <Row>
+      <Col>
+        <header className="">
+          <h1 className="h1">{props.title}</h1>
+        </header>
+      </Col>
+    </Row>
+    <Row>
+      <Col>
+        <main className="p">{props.children}</main>
+      </Col>
+    </Row>
+  </Container>
 );
 
 export { WebApp };

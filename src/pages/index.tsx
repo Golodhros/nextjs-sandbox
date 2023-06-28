@@ -1,21 +1,24 @@
+import Button from 'react-bootstrap/Button';
+
 import { Meta } from '@/layouts/Meta';
-import { Main } from '@/templates/Main';
+import { WebApp } from '@/templates/WebApp';
 
 const Index = () => {
   return (
-    <Main
+    <WebApp
       meta={
         <Meta
           title="Marco Experiences"
           description="Marco Experiences page description"
         />
       }
+      title="Marco Experiences Sandbox"
     >
-      <h2 className="text-2xl font-bold">Marco Experiences Sandbox</h2>
       <p>Paragraph text</p>
-      <h3 className="text-lg font-semibold">H3 heading</h3>
+      <Button variant="primary">Primary</Button>
+      <h3 className="h2">H3 heading</h3>
       <p>Paragraph text</p>
-    </Main>
+    </WebApp>
   );
 };
 
