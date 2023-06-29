@@ -1,21 +1,17 @@
+import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 
 import { Meta } from '@/layouts/Meta';
 import { WebApp } from '@/templates/WebApp';
 
-import { CategoryFilter } from '../components/categoryFilter';
-import { Reel } from '../components/reel';
+import { CategoryFilter } from '../../components/categoryFilter';
+import { Reel } from '../../components/reel';
 
 const API_ENDPOINT = '/api/marco';
 
-// TODO
-// - Handle loading state
-// - Handle error state
-// - Fix image aspect ratio
-// - Improve performance with observer
-
-const Index = () => {
+const Category = () => {
   const [data, setData] = useState([]);
+  const { query } = useRouter();
 
   useEffect(() => {
     fetch(API_ENDPOINT)
@@ -25,7 +21,9 @@ const Index = () => {
       });
   }, []);
 
-  console.log('data', data);
+  const filteredData = data.filter(
+    ({ title: categoryTitle }) => categoryTitle === query.id
+  );
 
   return (
     <WebApp
@@ -37,14 +35,14 @@ const Index = () => {
       }
       title="Explore Experiences"
     >
-      <CategoryFilter categories={data} />
-      {data.length
-        ? data.map(({ id, title, items }) => {
-            return <Reel key={id} title={title} experiences={items} />;
+      <CategoryFilter categories={data} active={query.id} />
+      {filteredData.length
+        ? filteredData.map(({ id, title, items }) => {
+            return <Reel key={id} title={title} experiences={items} selected />;
           })
         : null}
     </WebApp>
   );
 };
 
-export default Index;
+export default Category;
