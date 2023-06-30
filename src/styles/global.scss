@@ -1,13 +1,10 @@
 @import 'bootstrap/dist/css/bootstrap.min.css';
 
 // TODO
-// - Figure out unit size and make all spacing/padding multipliers of it
-// - Variables for font weights
-// - Add extra layer of colors like $background-color, $background-secondary-color, etc.
 // -
 
 // Variables
-$font-stack: 'Inter', sans-serif;
+$font-stack: sans-serif;
 $font-weight-bold: 700;
 $font-weight-semi-bold: 500;
 $font-weight-semi-light: 300;
@@ -17,12 +14,14 @@ $black: black;
 $off-black: #0d0d0d;
 $white: white;
 $off-white: #ffffff26;
+$grey: grey;
+$off-grey: darkgrey;
 
 html,
 body {
   font-family: $font-stack;
-  background-color: $black;
-  color: $white;
+  background-color: $white;
+  color: $off-black;
   font-size: 16px;
   line-height: 17.6px;
 }
@@ -37,21 +36,6 @@ body {
 .h1 {
   font-size: 36px;
   line-height: 39.6px;
-  letter-spacing: -3%;
-}
-.h2 {
-  font-size: 24px;
-  line-height: 26.4px;
-  letter-spacing: -3%;
-}
-.h3 {
-  font-size: 18px;
-  line-height: 21.6px;
-  letter-spacing: -1%;
-}
-.h4,
-.h5 {
-  font-weight: $font-weight-semi-bold;
 }
 p,
 span,
@@ -79,99 +63,32 @@ div {
   line-height: 15.4px;
   text-align: center;
 }
-.btn-link {
-}
-.btn-arrow-link {
-  span {
-    @include sr-only();
-  }
-}
-.btn-category-toggle {
-  font-weight: $font-weight-semi-bold;
-  height: 39px;
-  border-radius: 120px;
-  border: 1px solid $off-white;
-  padding: 12px 16px 12px 16px;
-  margin-right: 10px;
-  background-color: $off-black;
-  text-decoration: none;
-  color: $white;
-  display: flex;
-  align-items: center;
+.btn-cell {
+  background-color: $grey;
+  background: $off-grey;
+  border: 5px outset $grey;
+  text-shadow: -1px -1px rgba(0, 0, 0, 0.2);
 
   &:hover,
   &:active,
   &:visited {
-    background-color: $off-black;
-    opacity: 0.8;
-  }
-
-  &.is-active {
-    background-color: $white;
-    color: $black;
+    background: $grey;
   }
 }
 
 /* HEADER */
-.global-header {
-  display: flex;
-  align-items: center;
-  height: 80px;
-  border-bottom: 1px solid $off-white;
-}
-.logo {
-  margin-left: 32px;
-
-  span {
-    @include sr-only();
-  }
-}
 .header {
   padding: 64px 0 24px 0;
 }
 
-/* FILTER PANEL */
-.category-toggles {
-  list-style: none;
-  margin: 0;
-  padding: 24px 0 24px;
-  display: flex;
+/* GAME BOARD */
+.board {
+}
+.board-head {
+}
+.board-body {
 }
 
-/* EVENT LIST */
-.experience-reel {
-  padding: 24px 0 16px;
-
-  .experience-reel-head {
-    padding-bottom: 12px;
-  }
-  .experience-reel-title {
-  }
-  .experience-reel-body {
-  }
-  .experience-reel-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-  }
-}
-.experience-card {
-  max-width: 239px;
-  margin-right: 20px;
-}
-.experience-card-head {
-}
-.experience-card-image {
-  width: 100%;
-  height: auto;
-}
-.experience-card-body {
-}
-.experience-card-title {
-  margin-top: 8px;
-  margin-bottom: 4px;
-}
-.experience-card-provider {
-  margin: 0;
+/* GAME TABLE */
+.game-table {
 }
