@@ -1,83 +1,68 @@
-/* eslint-disable jsx-a11y/label-has-associated-control */
 import { useState } from 'react';
 
 import { AstonishedSmiley } from '@/components/AstonishedSmiley';
 import { DigitalCounter } from '@/components/DigitalCounter';
+import { Flag } from '@/components/Flag';
+import { GameConfigForm } from '@/components/GameConfigForm';
 import { KOSmiley } from '@/components/KOSmiley';
 import { Modal } from '@/components/Modal';
 import { Smiley } from '@/components/Smiley';
+import { Timer } from '@/components/Timer';
 import { Meta } from '@/layouts/Meta';
 import { WebApp } from '@/templates/WebApp';
+
+import { LEVEL_TO_GAME_CONFIG } from '../constants';
+import type { GameConfig } from '../types';
 
 type CellProps = {
   onDown: () => void;
   onUp: () => void;
+  onRightClick: () => void;
 };
 
-function Cell({ onDown, onUp }: CellProps) {
-  const handleClick = () => {};
-  const handleMouseDown = () => {
-    onDown();
+function Cell({ onDown, onUp, onRightClick }: CellProps) {
+  const [isFlagged, setIsFlagged] = useState(false);
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (e.button === 0) {
+      console.log('Left mouse down', e.button);
+      onDown();
+    }
   };
-  const handleMouseUp = () => {
-    onUp();
+  const handleMouseUp = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (e.button === 0) {
+      console.log('Left mouse up');
+      onUp();
+    }
+  };
+  const handleRightClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    onRightClick();
+    setIsFlagged(true);
   };
 
   return (
     <button
       type="button"
       className="cell-btn"
-      onClick={handleClick}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
+      onContextMenu={handleRightClick}
     >
+      {isFlagged && <Flag width={12} height={12} />}
       <span>Cell</span>
     </button>
   );
 }
 
-type GameConfig = {
-  height: number;
-  width: number;
-  mines: number;
-};
-type StandardLevels = 'beginner' | 'intermediate' | 'expert';
-type AllLevels = StandardLevels | 'custom';
-
-const isValidLevel = (level: string): level is AllLevels => {
-  return (
-    level === 'beginner' ||
-    level === 'intermediate' ||
-    level === 'expert' ||
-    level === 'custom'
-  );
-};
-
-const DEFAULT_CUSTOM_CONFIG: GameConfig = {
-  height: 20,
-  width: 30,
-  mines: 145,
-};
-const LEVEL_TO_GAME_CONFIG: Record<StandardLevels, GameConfig> = {
-  beginner: { height: 9, width: 9, mines: 10 },
-  intermediate: { height: 16, width: 16, mines: 40 },
-  expert: { height: 16, width: 30, mines: 99 },
-};
-
-const getStandardGameConfig = (level: StandardLevels): GameConfig => {
-  if (LEVEL_TO_GAME_CONFIG[level] !== undefined) {
-    return LEVEL_TO_GAME_CONFIG[level];
-  }
-
-  return LEVEL_TO_GAME_CONFIG.beginner;
-};
-
 const Index = () => {
   const [isPressed, setIsPressed] = useState(false);
   const [isOver, setIsOver] = useState(false);
+  const [isStarted, setIsStarted] = useState(false);
   const [gameConfig, setGameConfig] = useState<GameConfig>(
     LEVEL_TO_GAME_CONFIG.beginner
   );
+  const [numOfMines, setNumOfMines] = useState(gameConfig.mines);
   const [isGameControlModalOpen, setIsGameControlModalOpen] = useState(false);
   const [isControlModalOpen, setIsControlModalOpen] = useState(false);
 
@@ -99,6 +84,7 @@ const Index = () => {
   const handleReset = () => {
     console.log('Reset');
     setIsOver(true);
+    setIsStarted(false);
   };
   const handleCellDown = () => {
     console.log('Cell pressed');
@@ -107,48 +93,17 @@ const Index = () => {
   const handleCellUp = () => {
     console.log('Cell unpressed');
     setIsPressed(false);
-  };
-
-  // Form stuff
-  const [customHeight, setCustomHeight] = useState(
-    DEFAULT_CUSTOM_CONFIG.height
-  );
-  const handleCustomHeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = e.currentTarget;
-
-    setCustomHeight(Number(value));
-  };
-  const [customWidth, setCustomWidth] = useState(DEFAULT_CUSTOM_CONFIG.width);
-  const handleCustomWidthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = e.currentTarget;
-
-    setCustomWidth(Number(value));
-  };
-  const [customMines, setCustomMines] = useState(DEFAULT_CUSTOM_CONFIG.mines);
-  const handleCustomMinesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = e.currentTarget;
-
-    setCustomMines(Number(value));
-  };
-  const [gameLevel, setGameLevel] = useState<AllLevels>('beginner');
-  const handleGameLevelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = e.currentTarget;
-
-    if (isValidLevel(value)) {
-      setGameLevel(value);
+    if (!isStarted) {
+      setIsStarted(true);
     }
   };
-  const handleNewGame = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleCellRightClick = () => {
+    console.log('Cell right clicked');
+    setNumOfMines(numOfMines - 1);
+  };
 
-    const newGameConfig: GameConfig =
-      gameLevel === 'custom'
-        ? {
-            height: customHeight,
-            width: customWidth,
-            mines: customMines,
-          }
-        : getStandardGameConfig(gameLevel);
+  const handleNewGame = (newGameConfig: GameConfig) => {
+    console.log('New game', newGameConfig);
     setGameConfig(newGameConfig);
     setIsOver(false);
     setIsGameControlModalOpen(false);
@@ -162,7 +117,7 @@ const Index = () => {
     CurrentSmiley = KOSmiley;
   }
 
-  console.log('gameConfig', gameConfig);
+  const isTimerOn = !isOver && isStarted;
 
   return (
     <WebApp
@@ -181,121 +136,7 @@ const Index = () => {
             </button>
             {isGameControlModalOpen && (
               <Modal title="Game" onClose={handleGameControlClose}>
-                <form
-                  action=""
-                  onSubmit={handleNewGame}
-                  className="controls-form"
-                >
-                  <table>
-                    <thead>
-                      <tr>
-                        <th> </th>
-                        <th>Height</th>
-                        <th>Width</th>
-                        <th>Mines</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td>
-                          <label>
-                            <input
-                              type="radio"
-                              name="game-level"
-                              value="beginner"
-                              checked={gameLevel === 'beginner'}
-                              onChange={handleGameLevelChange}
-                            />
-                            Beginner
-                          </label>
-                        </td>
-                        <td>9</td>
-                        <td>9</td>
-                        <td>10</td>
-                      </tr>
-                      <tr>
-                        <td>
-                          <label>
-                            <input
-                              type="radio"
-                              name="game-level"
-                              value="intermediate"
-                              checked={gameLevel === 'intermediate'}
-                              onChange={handleGameLevelChange}
-                            />
-                            Intermediate
-                          </label>
-                        </td>
-                        <td>16</td>
-                        <td>16</td>
-                        <td>40</td>
-                      </tr>
-                      <tr>
-                        <td>
-                          <label>
-                            <input
-                              type="radio"
-                              name="game-level"
-                              value="expert"
-                              checked={gameLevel === 'expert'}
-                              onChange={handleGameLevelChange}
-                            />
-                            Expert
-                          </label>
-                        </td>
-                        <td>16</td>
-                        <td>30</td>
-                        <td>99</td>
-                      </tr>
-                      <tr>
-                        <td>
-                          <label>
-                            <input
-                              type="radio"
-                              name="game-level"
-                              value="custom"
-                              checked={gameLevel === 'custom'}
-                              onChange={handleGameLevelChange}
-                            />
-                            Custom
-                          </label>
-                        </td>
-                        <td>
-                          <input
-                            className="custom-field"
-                            type="text"
-                            value={customHeight}
-                            onChange={handleCustomHeightChange}
-                            name="custom-height"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            className="custom-field"
-                            type="text"
-                            value={customWidth}
-                            onChange={handleCustomWidthChange}
-                            name="custom-width"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            className="custom-field"
-                            type="text"
-                            value={customMines}
-                            onChange={handleCustomMinesChange}
-                            name="custom-mines"
-                          />
-                        </td>
-                      </tr>
-                      <tr className="controls-form-actions">
-                        <td colSpan={4}>
-                          <button type="submit">New Game</button>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </form>
+                <GameConfigForm onNewGame={handleNewGame} />
               </Modal>
             )}
           </li>
@@ -340,7 +181,7 @@ const Index = () => {
         <div className="board">
           <div className="board-head">
             <div className="board-count">
-              <DigitalCounter value={99} />
+              <DigitalCounter value={numOfMines} />
             </div>
             <button
               className="board-reset-btn"
@@ -351,12 +192,16 @@ const Index = () => {
               <span>Reset</span>
             </button>
             <div className="board-timer">
-              <DigitalCounter value={112} />
+              <Timer isOn={isTimerOn} />
             </div>
           </div>
           <div className="board-body">
             <div className="board-row">
-              <Cell onDown={handleCellDown} onUp={handleCellUp} />
+              <Cell
+                onDown={handleCellDown}
+                onUp={handleCellUp}
+                onRightClick={handleCellRightClick}
+              />
             </div>
           </div>
         </div>
