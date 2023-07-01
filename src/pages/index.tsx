@@ -14,58 +14,166 @@ import { WebApp } from '@/templates/WebApp';
 import { LEVEL_TO_GAME_CONFIG } from '../constants';
 import type { GameConfig } from '../types';
 
+function getCellClassFor(adjacentMines: number) {
+  switch (adjacentMines) {
+    case 0:
+      return 'cell-0';
+    case 1:
+      return 'cell-1';
+    case 2:
+      return 'cell-2';
+    case 3:
+      return 'cell-3';
+    case 4:
+    case 5:
+    case 6:
+    case 7:
+    case 8:
+      return 'cell-4';
+    default:
+      return '';
+  }
+}
+
+function getBoardStateToRender(
+  boardState: CellState[],
+  gameConfig: GameConfig
+) {
+  const result: Record<string, CellState[]> = {};
+
+  for (let i = 0; i < boardState.length; i += gameConfig.width) {
+    result[`row-${Math.random() + i}`] = boardState.slice(
+      i,
+      i + gameConfig.width
+    );
+  }
+
+  return result;
+}
+
 type CellProps = {
-  onDown: () => void;
-  onUp: () => void;
-  onRightClick: () => void;
+  onReveal: (id: string) => void;
+  onFlag: (id: string) => void;
+  onGameOver: () => void;
+  onAdjacentReveal: (id: string) => void;
+  state: CellState;
 };
 
-function Cell({ onDown, onUp, onRightClick }: CellProps) {
-  const [isFlagged, setIsFlagged] = useState(false);
-
-  const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (e.button === 0) {
-      console.log('Left mouse down', e.button);
-      onDown();
-    }
-  };
+function Cell({
+  onReveal,
+  onFlag,
+  onGameOver,
+  onAdjacentReveal,
+  state,
+}: CellProps) {
   const handleMouseUp = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (e.button === 0) {
-      console.log('Left mouse up');
-      onUp();
+      onReveal(state.id);
+
+      if (state.isMine) {
+        onGameOver();
+      } else if (!state.isMine && state.adjacentMines === 0) {
+        onAdjacentReveal(state.id);
+      }
     }
   };
   const handleRightClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    onRightClick();
-    setIsFlagged(true);
+    onFlag(state.id);
   };
 
   return (
-    <button
-      type="button"
-      className="cell-btn"
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
-      onContextMenu={handleRightClick}
-    >
-      {isFlagged && <Flag width={12} height={12} />}
-      <span>Cell</span>
-    </button>
+    <span className="cell-wrapper">
+      {!state.isRevealed && (
+        <button
+          type="button"
+          className="cell-btn"
+          onMouseUp={handleMouseUp}
+          onContextMenu={handleRightClick}
+        >
+          {state.isFlagged && <Flag width={12} height={12} />}
+          <span>Cell</span>
+        </button>
+      )}
+      {/* TODO: get bomb SVG */}
+      {state.isRevealed && state.isMine && 'M'}
+      {state.isRevealed && !state.isMine && (
+        <span className={getCellClassFor(state.adjacentMines)}>
+          {state.adjacentMines}
+        </span>
+      )}
+    </span>
   );
 }
+
+type CellState = {
+  id: string;
+  isMine: boolean;
+  isRevealed: boolean;
+  isFlagged: boolean;
+  adjacentMines: number;
+};
+
+const initialBoardState: CellState[] = [
+  {
+    id: 'r0-c0',
+    isMine: true,
+    isRevealed: false,
+    isFlagged: false,
+    adjacentMines: 0,
+  },
+  {
+    id: 'r0-c1',
+    isMine: false,
+    isRevealed: false,
+    isFlagged: false,
+    adjacentMines: 1,
+  },
+  {
+    id: 'r0-c2',
+    isMine: false,
+    isRevealed: false,
+    isFlagged: false,
+    adjacentMines: 0,
+  },
+  {
+    id: 'r1-c0',
+    isMine: false,
+    isRevealed: false,
+    isFlagged: false,
+    adjacentMines: 1,
+  },
+  {
+    id: 'r1-c1',
+    isMine: false,
+    isRevealed: false,
+    isFlagged: false,
+    adjacentMines: 1,
+  },
+  {
+    id: 'r1-c2',
+    isMine: false,
+    isRevealed: false,
+    isFlagged: false,
+    adjacentMines: 0,
+  },
+];
 
 const Index = () => {
   const [isPressed, setIsPressed] = useState(false);
   const [isOver, setIsOver] = useState(false);
   const [isStarted, setIsStarted] = useState(false);
+  const [boardState, setBoardState] = useState<CellState[]>([
+    ...initialBoardState,
+  ]);
   const [gameConfig, setGameConfig] = useState<GameConfig>(
     LEVEL_TO_GAME_CONFIG.beginner
   );
   const [numOfMines, setNumOfMines] = useState(gameConfig.mines);
+
+  // TODO: Extract controls into a separate component
   const [isGameControlModalOpen, setIsGameControlModalOpen] = useState(false);
   const [isControlModalOpen, setIsControlModalOpen] = useState(false);
-
   const handleGameControlClick = () => {
     setIsGameControlModalOpen(true);
     setIsControlModalOpen(false);
@@ -82,31 +190,83 @@ const Index = () => {
   };
 
   const handleReset = () => {
-    console.log('Reset');
+    setIsOver(false);
+    setIsStarted(false);
+    setBoardState(initialBoardState);
+    setNumOfMines(gameConfig.mines);
+  };
+  const handleGameOver = () => {
     setIsOver(true);
     setIsStarted(false);
   };
-  const handleCellDown = () => {
-    console.log('Cell pressed');
-    setIsPressed(true);
-  };
-  const handleCellUp = () => {
-    console.log('Cell unpressed');
-    setIsPressed(false);
-    if (!isStarted) {
-      setIsStarted(true);
+  const handleCellReveal = (cellId: string) => {
+    if (!isOver) {
+      setIsPressed(false);
+      if (!isStarted) {
+        setIsStarted(true);
+      }
+      const newBoardState = boardState.map((cell) => {
+        if (cell.id === cellId) {
+          return {
+            ...cell,
+            isRevealed: true,
+          };
+        }
+        return cell;
+      });
+      setBoardState(newBoardState);
     }
   };
-  const handleCellRightClick = () => {
-    console.log('Cell right clicked');
+  const handleCellFlag = (cellId: string) => {
+    console.log('Right click', cellId);
     setNumOfMines(numOfMines - 1);
+    const newBoardState = boardState.map((cell) => {
+      if (cell.id === cellId) {
+        return {
+          ...cell,
+          isFlagged: true,
+        };
+      }
+      return cell;
+    });
+    setBoardState(newBoardState);
   };
-
   const handleNewGame = (newGameConfig: GameConfig) => {
-    console.log('New game', newGameConfig);
-    setGameConfig(newGameConfig);
     setIsOver(false);
     setIsGameControlModalOpen(false);
+    console.log('New game', newGameConfig);
+    setGameConfig(newGameConfig);
+    // TODO: Generate board state from config
+  };
+  const handleCellAdjacentReveal = (id: string) => {
+    if (!isOver) {
+      // Iterate through adjacent cells and reveal them if they are not mines
+      const currentRow = Number(id.split('-')[0]?.slice(1));
+      const currentColumn = Number(id.split('-')[1]?.slice(1));
+      const adjacentCellIds = [
+        `r${currentRow - 1}-c${currentColumn - 1}`,
+        `r${currentRow - 1}-c${currentColumn}`,
+        `r${currentRow - 1}-c${currentColumn + 1}`,
+        `r${currentRow}-c${currentColumn - 1}`,
+        `r${currentRow}-c${currentColumn + 1}`,
+        `r${currentRow + 1}-c${currentColumn - 1}`,
+        `r${currentRow + 1}-c${currentColumn}`,
+        `r${currentRow + 1}-c${currentColumn + 1}`,
+      ];
+      const newBoardState = boardState.map((cell) => {
+        if (
+          cell.id === id ||
+          adjacentCellIds.some((cellId) => cell.id === cellId)
+        ) {
+          return {
+            ...cell,
+            isRevealed: true,
+          };
+        }
+        return cell;
+      });
+      setBoardState(newBoardState);
+    }
   };
 
   let CurrentSmiley = Smiley;
@@ -116,9 +276,10 @@ const Index = () => {
   if (isOver) {
     CurrentSmiley = KOSmiley;
   }
-
   const isTimerOn = !isOver && isStarted;
 
+  const stateToRender = getBoardStateToRender(boardState, gameConfig);
+  console.log('stateToRender: ', stateToRender);
   return (
     <WebApp
       meta={<Meta title="Collimator" description="Minesweeper" />}
@@ -158,19 +319,6 @@ const Index = () => {
                     <strong>Right-click</strong> (or <strong>Ctrl+click</strong>
                     ) an empty square to flag it.{' '}
                   </li>
-                  <li>
-                    Midde-click (or left+right click) a number to reveal its
-                    adjacent squares.
-                  </li>
-                  <li>
-                    Press <strong>space</strong> bar while hovering over a
-                    square to flag it or
-                  </li>
-                  <li>reveal its adjacent squares. </li>
-                  <li>
-                    Press <strong>F2</strong> or click the smiley face to start
-                    a new game.
-                  </li>
                 </ul>
               </Modal>
             )}
@@ -196,13 +344,24 @@ const Index = () => {
             </div>
           </div>
           <div className="board-body">
-            <div className="board-row">
-              <Cell
-                onDown={handleCellDown}
-                onUp={handleCellUp}
-                onRightClick={handleCellRightClick}
-              />
-            </div>
+            {Object.keys(stateToRender).map((key: string) => {
+              return (
+                <div className="board-row" key={key}>
+                  {stateToRender[key]?.map((cell: CellState) => {
+                    return (
+                      <Cell
+                        key={cell.id}
+                        state={{ ...cell }}
+                        onReveal={handleCellReveal}
+                        onAdjacentReveal={handleCellAdjacentReveal}
+                        onFlag={handleCellFlag}
+                        onGameOver={handleGameOver}
+                      />
+                    );
+                  })}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

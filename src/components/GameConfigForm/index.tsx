@@ -1,7 +1,11 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
 import { useState } from 'react';
 
-import { DEFAULT_CUSTOM_CONFIG, LEVEL_TO_GAME_CONFIG } from '../../constants';
+import {
+  DEFAULT_CUSTOM_CONFIG,
+  LEVEL_TO_GAME_CONFIG,
+  MIN_WIDTH,
+} from '../../constants';
 import type { AllLevels, GameConfig, StandardLevels } from '../../types';
 
 const isValidLevel = (level: string): level is AllLevels => {
@@ -39,7 +43,7 @@ const GameConfigForm = ({ onNewGame }: GameConfigFormProps) => {
   const handleCustomWidthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.currentTarget;
 
-    setCustomWidth(Number(value));
+    setCustomWidth(Number(value) < MIN_WIDTH ? MIN_WIDTH : Number(value));
   };
 
   const [customMines, setCustomMines] = useState(DEFAULT_CUSTOM_CONFIG.mines);
@@ -61,6 +65,7 @@ const GameConfigForm = ({ onNewGame }: GameConfigFormProps) => {
   const handleNewGame = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    // TODO: Validate custom game config (not negative, not more mines than spaces, etc.)
     const newGameConfig: GameConfig =
       gameLevel === 'custom'
         ? {

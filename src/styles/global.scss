@@ -40,6 +40,7 @@ $grey-lighter: #eeeeee;
 $blue: #0000ffff;
 $office-green: #007b00ff;
 $red: #ff0000ff;
+$purple: rgb(75, 2, 75);
 $white: #ffffffff;
 
 html,
@@ -83,7 +84,7 @@ div {
   border: 0 !important;
 }
 
-/* BUTTONS */
+/* CELLS */
 .cell-btn {
   background-color: $silver;
   padding: 0;
@@ -91,6 +92,7 @@ div {
   border: 2px outset $white;
   width: $cell-size;
   height: $cell-size;
+  position: absolute;
 
   &:active,
   &:visited {
@@ -101,18 +103,31 @@ div {
     @include sr-only;
   }
 }
-.link-btn {
+.cell-wrapper {
+  border: 1px solid $grey;
+  width: $cell-size;
+  height: $cell-size;
   padding: 0;
-  background: $white;
-  border: 0;
+  margin: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cell-0 {
+  color: $silver;
+}
+.cell-1 {
   color: $blue;
-  text-decoration: underline;
-  cursor: pointer;
-
-  &:hover,
-  &:active {
-    color: $office-green;
-  }
+}
+.cell-2 {
+  color: $office-green;
+}
+.cell-3 {
+  color: $red;
+}
+.cell-4 {
+  color: $purple;
 }
 
 /* LAYOUT */
@@ -141,6 +156,19 @@ div {
 
   li {
     margin-right: $unit-half;
+  }
+}
+.link-btn {
+  padding: 0;
+  background: $white;
+  border: 0;
+  color: $blue;
+  text-decoration: underline;
+  cursor: pointer;
+
+  &:hover,
+  &:active {
+    color: $office-green;
   }
 }
 
@@ -212,8 +240,6 @@ div {
 .board-timer {
 }
 .board-body {
-  display: flex;
-  justify-content: space-between;
   border: 2px inset $white;
 }
 .board-row {
@@ -237,6 +263,7 @@ div {
   font-size: $font-size-sm;
   position: absolute;
   top: $unit-double;
+  z-index: 9;
 }
 .modal-header {
   display: flex;

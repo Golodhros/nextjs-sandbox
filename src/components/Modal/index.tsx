@@ -8,13 +8,15 @@ type ModalProps = {
   onClose: () => void;
 };
 
+// TODO: Close when clicking outside
+// TODO: Add a11y attributes
 const Modal = ({ title, children, onClose }: ModalProps) => {
   const handleClose = () => {
     onClose();
   };
 
   useEffect(() => {
-    // TODO: Figure out how to type this
+    // TODO: Figure out how to type this properly
     const handleEsc = (event: any) => {
       if (event.key === 'Escape') {
         onClose();
