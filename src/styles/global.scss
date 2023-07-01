@@ -1,28 +1,53 @@
-@import 'bootstrap/dist/css/bootstrap.min.css';
-
 // TODO
 // -
 
 // Variables
 $font-stack: sans-serif;
+$clock-font-stack: 'DS Digital', monospace;
 $font-weight-bold: 700;
 $font-weight-semi-bold: 500;
+$font-weight-regular: 400;
 $font-weight-semi-light: 300;
+$font-size-base: 16px;
+$font-size-sm: 13px;
+$cell-size: 18px;
+
+// Units
+$unit: 1rem;
+$unit-half: $unit / 2;
+$unit-quarter: $unit / 4;
+$unit-double: $unit * 2;
+$unit-triple: $unit * 3;
+$unit-quadruple: $unit * 4;
+$unit-quintuple: $unit * 5;
+$unit-sextuple: $unit * 6;
+$unit-septuple: $unit * 7;
+$unit-octuple: $unit * 8;
+$unit-nonuple: $unit * 9;
+$unit-decuple: $unit * 10;
+
+// Grid
+$grid-width: 960px;
+$grid-gutter-width: $unit-double;
 
 // Colors
 $black: black;
 $off-black: #0d0d0d;
-$white: white;
-$off-white: #ffffff26;
-$grey: grey;
-$off-grey: darkgrey;
+$silver: #c0c0c0ff;
+$grey: #7b7b7bff;
+$grey-light: #ddd;
+$grey-lighter: #eeeeee;
+$blue: #0000ffff;
+$office-green: #007b00ff;
+$red: #ff0000ff;
+$white: #ffffffff;
 
 html,
 body {
   font-family: $font-stack;
   background-color: $white;
   color: $off-black;
-  font-size: 16px;
+  font-size: $font-size-base;
   line-height: 17.6px;
 }
 
@@ -31,7 +56,8 @@ body {
 .h2,
 .h3 {
   font-weight: $font-weight-bold;
-  color: $white;
+  color: $off-black;
+  margin: $unit 0;
 }
 .h1 {
   font-size: 36px;
@@ -40,7 +66,7 @@ body {
 p,
 span,
 div {
-  font-weight: $font-weight-semi-light;
+  font-weight: $font-weight-regular;
 }
 
 // Text for Screen Readers only
@@ -58,35 +84,184 @@ div {
 }
 
 /* BUTTONS */
-.btn {
-  font-size: 14px;
-  line-height: 15.4px;
-  text-align: center;
-}
-.btn-cell {
-  background-color: $grey;
-  background: $off-grey;
-  border: 5px outset $grey;
-  text-shadow: -1px -1px rgba(0, 0, 0, 0.2);
+.cell-btn {
+  background-color: $silver;
+  padding: 0;
+  line-height: 0;
+  border: 2px outset $white;
+  width: $cell-size;
+  height: $cell-size;
 
-  &:hover,
   &:active,
   &:visited {
-    background: $grey;
+    border: 2px inset $white;
   }
+
+  span {
+    @include sr-only;
+  }
+}
+.link-btn {
+  padding: 0;
+  background: $white;
+  border: 0;
+  color: $blue;
+  text-decoration: underline;
+  cursor: pointer;
+
+  &:hover,
+  &:active {
+    color: $office-green;
+  }
+}
+
+/* LAYOUT */
+.container {
+  max-width: $grid-width;
+  margin: 0 auto;
+  padding: 0 $grid-gutter-width;
 }
 
 /* HEADER */
 .header {
-  padding: 64px 0 24px 0;
+  padding: 0 0 $unit;
+}
+
+/* GAME CONTROLS */
+.game-controls {
+  padding: 0;
+  margin-bottom: $unit-half;
+  position: relative;
+}
+.game-controls-list {
+  display: flex;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+
+  li {
+    margin-right: $unit-half;
+  }
+}
+
+.controls-list {
+  padding: $unit-quarter $unit-half $unit-quarter $unit;
+  list-style-type: disc;
+
+  li {
+    margin: 0 0 $unit-quarter;
+  }
+}
+.controls-form {
+  font-size: $font-size-sm;
+
+  label {
+    font-weight: $font-weight-bold;
+  }
+  td {
+    padding: 3px;
+  }
+  table {
+    border-collapse: collapse;
+    border-spacing: 0;
+    width: 100%;
+    border: 0;
+  }
+  .controls-form-actions,
+  thead {
+    background-color: $grey-light;
+  }
+  th {
+    font-weight: $font-weight-regular;
+  }
+  .custom-field {
+    max-width: $unit-double;
+  }
 }
 
 /* GAME BOARD */
+.board-wrapper {
+  border: 0.5px solid $grey;
+}
 .board {
+  background: $silver;
+  border: 2px outset $white;
+  padding: 3px;
 }
 .board-head {
+  display: flex;
+  justify-content: space-between;
+  border: 2px inset $white;
+  padding: $unit-quarter;
+}
+.board-count {
+}
+.board-reset-btn {
+  background-color: $silver;
+  line-height: 0;
+  border: 2px outset $white;
+  padding: 0;
+
+  span {
+    @include sr-only;
+  }
+  &:active {
+    border: 2px inset $white;
+  }
+}
+.board-timer {
 }
 .board-body {
+  display: flex;
+  justify-content: space-between;
+  border: 2px inset $white;
+}
+.board-row {
+  display: flex;
+}
+
+/* DIGITAL COUNTER */
+.digital-counter {
+  display: flex;
+  font-family: $clock-font-stack;
+  color: $red;
+  background-color: $black;
+  width: auto;
+  font-size: 2em;
+  line-height: 0.7;
+}
+
+/* MODAL */
+.modal {
+  border: 1px solid $grey;
+  font-size: $font-size-sm;
+  position: absolute;
+  top: $unit-double;
+}
+.modal-header {
+  display: flex;
+  background-color: $blue;
+  color: $white;
+  justify-content: space-between;
+  padding: $unit-quarter $unit-half;
+}
+.modal-title {
+  font-weight: $font-weight-bold;
+}
+.modal-close-btn {
+  color: white;
+  font-weight: $font-weight-bold;
+  background-color: transparent;
+  border: 0;
+  cursor: pointer;
+
+  &:hover,
+  &:active {
+    color: $silver;
+  }
+}
+.modal-body {
+  background-color: $grey-lighter;
 }
 
 /* GAME TABLE */
