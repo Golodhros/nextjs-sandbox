@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { AstonishedSmiley } from '@/components/AstonishedSmiley';
 import { DigitalCounter } from '@/components/DigitalCounter';
@@ -7,11 +7,12 @@ import { GameConfigForm } from '@/components/GameConfigForm';
 import { KOSmiley } from '@/components/KOSmiley';
 import { Modal } from '@/components/Modal';
 import { Smiley } from '@/components/Smiley';
+import { StartStruckSmiley } from '@/components/StartStruckSmiley';
 import { Timer } from '@/components/Timer';
 import { Meta } from '@/layouts/Meta';
 import { WebApp } from '@/templates/WebApp';
 
-import { LEVEL_TO_GAME_CONFIG } from '../constants';
+import { FLAG_SIZE, LEVEL_TO_GAME_CONFIG } from '../constants';
 import type { GameConfig } from '../types';
 
 function getCellClassFor(adjacentMines: number) {
@@ -42,16 +43,82 @@ function getBoardStateToRender(
   const result: Record<string, CellState[]> = {};
 
   for (let i = 0; i < boardState.length; i += gameConfig.width) {
-    result[`row-${Math.random() + i}`] = boardState.slice(
-      i,
-      i + gameConfig.width
-    );
+    result[`row-${i}`] = boardState.slice(i, i + gameConfig.width);
   }
 
   return result;
 }
 
+function checkVictory(boardState: CellState[], gameConfig: GameConfig) {
+  const numOfRevealedCells = boardState.filter(
+    (cell) => cell.isRevealed
+  ).length;
+  const numOfCells = boardState.length;
+  const numOfMines = gameConfig.mines;
+
+  return numOfRevealedCells === numOfCells - numOfMines;
+}
+
+function generateBoardGame(gameConfig: GameConfig): CellState[] {
+  const { width, height, mines } = gameConfig;
+  const numOfCells = width * height;
+
+  // Generate mines by randomly selecting cells by index
+  const mineIdx = new Set<number>();
+  while (mineIdx.size < mines) {
+    mineIdx.add(Math.floor(Math.random() * numOfCells));
+  }
+
+  // Generate initial board state with mines state
+  const boardState: CellState[] = [];
+  for (let i = 0; i < numOfCells; i += 1) {
+    const currentRow = Math.floor(i / width);
+    const currentColumn = i % width;
+    const isMine = mineIdx.has(i);
+    const id = `r${currentRow}-c${currentColumn}`;
+
+    boardState.push({
+      id,
+      isMine,
+      isRevealed: false,
+      isFlagged: false,
+      adjacentMines: 0,
+    });
+  }
+
+  // Generate adjacent mines count
+  for (let i = 0; i < numOfCells; i += 1) {
+    const currentCell = boardState[i];
+    const currentRow = Math.floor(i / width);
+    const currentColumn = i % width;
+    const adjacentCellIds = [
+      `r${currentRow - 1}-c${currentColumn - 1}`,
+      `r${currentRow - 1}-c${currentColumn}`,
+      `r${currentRow - 1}-c${currentColumn + 1}`,
+      `r${currentRow}-c${currentColumn - 1}`,
+      `r${currentRow}-c${currentColumn + 1}`,
+      `r${currentRow + 1}-c${currentColumn - 1}`,
+      `r${currentRow + 1}-c${currentColumn}`,
+      `r${currentRow + 1}-c${currentColumn + 1}`,
+    ];
+    const adjacentMinesCount = adjacentCellIds.filter((cellId) => {
+      const cell = boardState.find((c) => c.id === cellId);
+
+      return cell?.isMine;
+    }).length;
+
+    if (currentCell) {
+      currentCell.adjacentMines = adjacentMinesCount;
+    }
+  }
+
+  console.log('generated boardState: ', boardState);
+
+  return boardState;
+}
+
 type CellProps = {
+  onButtonDown: () => void;
   onReveal: (id: string) => void;
   onFlag: (id: string) => void;
   onGameOver: () => void;
@@ -59,48 +126,63 @@ type CellProps = {
   state: CellState;
 };
 
+// TRY: React.memo
+// TRY: useCallback
+// TRY: useMemo
+// TRY: useReducer
+// TRY: useImperativeHandle
+// TRY: useLayoutEffect
+// TRY: only necessary props
 function Cell({
+  onButtonDown,
   onReveal,
   onFlag,
   onGameOver,
   onAdjacentReveal,
   state,
 }: CellProps) {
+  const { isRevealed, isFlagged, id, isMine, adjacentMines } = state;
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (e.button === 0) {
+      onButtonDown();
+    }
+  };
   const handleMouseUp = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (e.button === 0) {
-      onReveal(state.id);
+      onReveal(id);
 
-      if (state.isMine) {
+      // TODO: Combine onReveal and onAdjacentReveal
+      if (isMine) {
         onGameOver();
-      } else if (!state.isMine && state.adjacentMines === 0) {
-        onAdjacentReveal(state.id);
+      } else if (!isMine && adjacentMines === 0) {
+        onAdjacentReveal(id);
       }
     }
   };
   const handleRightClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    onFlag(state.id);
+    onFlag(id);
   };
 
   return (
     <span className="cell-wrapper">
-      {!state.isRevealed && (
+      {!isRevealed && (
         <button
           type="button"
           className="cell-btn"
+          onMouseDown={handleMouseDown}
           onMouseUp={handleMouseUp}
           onContextMenu={handleRightClick}
         >
-          {state.isFlagged && <Flag width={12} height={12} />}
+          {isFlagged && <Flag width={FLAG_SIZE} height={FLAG_SIZE} />}
           <span>Cell</span>
         </button>
       )}
       {/* TODO: get bomb SVG */}
-      {state.isRevealed && state.isMine && 'M'}
-      {state.isRevealed && !state.isMine && (
-        <span className={getCellClassFor(state.adjacentMines)}>
-          {state.adjacentMines}
-        </span>
+      {isRevealed && isMine && <span className="cell-mine">M</span>}
+      {isRevealed && !isMine && (
+        <span className={getCellClassFor(adjacentMines)}>{adjacentMines}</span>
       )}
     </span>
   );
@@ -114,62 +196,24 @@ type CellState = {
   adjacentMines: number;
 };
 
-const initialBoardState: CellState[] = [
-  {
-    id: 'r0-c0',
-    isMine: true,
-    isRevealed: false,
-    isFlagged: false,
-    adjacentMines: 0,
-  },
-  {
-    id: 'r0-c1',
-    isMine: false,
-    isRevealed: false,
-    isFlagged: false,
-    adjacentMines: 1,
-  },
-  {
-    id: 'r0-c2',
-    isMine: false,
-    isRevealed: false,
-    isFlagged: false,
-    adjacentMines: 0,
-  },
-  {
-    id: 'r1-c0',
-    isMine: false,
-    isRevealed: false,
-    isFlagged: false,
-    adjacentMines: 1,
-  },
-  {
-    id: 'r1-c1',
-    isMine: false,
-    isRevealed: false,
-    isFlagged: false,
-    adjacentMines: 1,
-  },
-  {
-    id: 'r1-c2',
-    isMine: false,
-    isRevealed: false,
-    isFlagged: false,
-    adjacentMines: 0,
-  },
-];
-
 const Index = () => {
   const [isPressed, setIsPressed] = useState(false);
   const [isOver, setIsOver] = useState(false);
+  const [isWon, setIsWon] = useState(false);
+  const [isTimerReset, setIsTimerReset] = useState(false);
   const [isStarted, setIsStarted] = useState(false);
-  const [boardState, setBoardState] = useState<CellState[]>([
-    ...initialBoardState,
-  ]);
   const [gameConfig, setGameConfig] = useState<GameConfig>(
     LEVEL_TO_GAME_CONFIG.beginner
   );
+  const [boardState, setBoardState] = useState<CellState[]>(
+    generateBoardGame(gameConfig)
+  );
   const [numOfMines, setNumOfMines] = useState(gameConfig.mines);
+
+  useEffect(() => {
+    console.log('boardState: ', boardState);
+    setIsWon(checkVictory(boardState, gameConfig));
+  }, [boardState]);
 
   // TODO: Extract controls into a separate component
   const [isGameControlModalOpen, setIsGameControlModalOpen] = useState(false);
@@ -192,20 +236,35 @@ const Index = () => {
   const handleReset = () => {
     setIsOver(false);
     setIsStarted(false);
-    setBoardState(initialBoardState);
+    setIsWon(false);
+    setIsPressed(false);
+    setIsTimerReset(true);
     setNumOfMines(gameConfig.mines);
+    setBoardState(generateBoardGame(gameConfig));
   };
   const handleGameOver = () => {
     setIsOver(true);
     setIsStarted(false);
   };
+  const handleNewGame = (newGameConfig: GameConfig) => {
+    setIsOver(false);
+    setIsWon(false);
+    setIsStarted(false);
+    setIsTimerReset(true);
+    setIsGameControlModalOpen(false);
+    setGameConfig(newGameConfig);
+    console.log('New game', newGameConfig);
+    setBoardState(generateBoardGame(newGameConfig));
+  };
+
   const handleCellReveal = (cellId: string) => {
     if (!isOver) {
       setIsPressed(false);
       if (!isStarted) {
         setIsStarted(true);
+        setIsTimerReset(false);
       }
-      const newBoardState = boardState.map((cell) => {
+      const updatedBoardState = boardState.map((cell) => {
         if (cell.id === cellId) {
           return {
             ...cell,
@@ -214,13 +273,15 @@ const Index = () => {
         }
         return cell;
       });
-      setBoardState(newBoardState);
+      setBoardState(updatedBoardState);
     }
   };
+  const handleCellDown = () => {
+    setIsPressed(true);
+  };
   const handleCellFlag = (cellId: string) => {
-    console.log('Right click', cellId);
     setNumOfMines(numOfMines - 1);
-    const newBoardState = boardState.map((cell) => {
+    const updatedBoardState = boardState.map((cell) => {
       if (cell.id === cellId) {
         return {
           ...cell,
@@ -229,14 +290,7 @@ const Index = () => {
       }
       return cell;
     });
-    setBoardState(newBoardState);
-  };
-  const handleNewGame = (newGameConfig: GameConfig) => {
-    setIsOver(false);
-    setIsGameControlModalOpen(false);
-    console.log('New game', newGameConfig);
-    setGameConfig(newGameConfig);
-    // TODO: Generate board state from config
+    setBoardState(updatedBoardState);
   };
   const handleCellAdjacentReveal = (id: string) => {
     if (!isOver) {
@@ -276,10 +330,15 @@ const Index = () => {
   if (isOver) {
     CurrentSmiley = KOSmiley;
   }
-  const isTimerOn = !isOver && isStarted;
+  if (isWon) {
+    CurrentSmiley = StartStruckSmiley;
+    console.log('You won!');
+  }
+  const isTimerOn = !isOver && isStarted && !isWon;
 
   const stateToRender = getBoardStateToRender(boardState, gameConfig);
-  console.log('stateToRender: ', stateToRender);
+  // console.log('stateToRender: ', stateToRender);
+
   return (
     <WebApp
       meta={<Meta title="Collimator" description="Minesweeper" />}
@@ -340,7 +399,7 @@ const Index = () => {
               <span>Reset</span>
             </button>
             <div className="board-timer">
-              <Timer isOn={isTimerOn} />
+              <Timer isOn={isTimerOn} isReset={isTimerReset} />
             </div>
           </div>
           <div className="board-body">
@@ -351,7 +410,8 @@ const Index = () => {
                     return (
                       <Cell
                         key={cell.id}
-                        state={{ ...cell }}
+                        state={cell}
+                        onButtonDown={handleCellDown}
                         onReveal={handleCellReveal}
                         onAdjacentReveal={handleCellAdjacentReveal}
                         onFlag={handleCellFlag}
@@ -362,6 +422,25 @@ const Index = () => {
                 </div>
               );
             })}
+            {/* {Array.from({ length: gameConfig.height }, (_, i) => {
+              return (
+                <div className="board-row" key={i}>
+                  {boardState
+                    .slice(i * gameConfig.width, (i + 1) * gameConfig.width)
+                    .map((cell) => (
+                      <Cell
+                        key={cell.id}
+                        state={{ ...cell }}
+                        onReveal={handleCellReveal}
+                        onAdjacentReveal={handleCellAdjacentReveal}
+                        onFlag={handleCellFlag}
+                        onButtonDown={handleCellDown}
+                        onGameOver={handleGameOver}
+                      />
+                    ))}
+                </div>
+              );
+            })} */}
           </div>
         </div>
       </div>

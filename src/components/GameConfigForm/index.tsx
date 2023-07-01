@@ -1,8 +1,10 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
 import { useState } from 'react';
+import { useLocalStorage } from 'usehooks-ts';
 
 import {
   DEFAULT_CUSTOM_CONFIG,
+  DEFAULT_LEVEL,
   LEVEL_TO_GAME_CONFIG,
   MIN_WIDTH,
 } from '../../constants';
@@ -53,7 +55,7 @@ const GameConfigForm = ({ onNewGame }: GameConfigFormProps) => {
     setCustomMines(Number(value));
   };
 
-  const [gameLevel, setGameLevel] = useState<AllLevels>('beginner');
+  const [gameLevel, setGameLevel] = useLocalStorage('level', DEFAULT_LEVEL);
   const handleGameLevelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.currentTarget;
 
@@ -102,9 +104,9 @@ const GameConfigForm = ({ onNewGame }: GameConfigFormProps) => {
                 Beginner
               </label>
             </td>
-            <td>9</td>
-            <td>9</td>
-            <td>10</td>
+            <td>{LEVEL_TO_GAME_CONFIG.beginner.height}</td>
+            <td>{LEVEL_TO_GAME_CONFIG.beginner.width}</td>
+            <td>{LEVEL_TO_GAME_CONFIG.beginner.mines}</td>
           </tr>
           <tr>
             <td>
@@ -119,9 +121,9 @@ const GameConfigForm = ({ onNewGame }: GameConfigFormProps) => {
                 Intermediate
               </label>
             </td>
-            <td>16</td>
-            <td>16</td>
-            <td>40</td>
+            <td>{LEVEL_TO_GAME_CONFIG.intermediate.height}</td>
+            <td>{LEVEL_TO_GAME_CONFIG.intermediate.width}</td>
+            <td>{LEVEL_TO_GAME_CONFIG.intermediate.mines}</td>
           </tr>
           <tr>
             <td>
@@ -136,9 +138,9 @@ const GameConfigForm = ({ onNewGame }: GameConfigFormProps) => {
                 Expert
               </label>
             </td>
-            <td>16</td>
-            <td>30</td>
-            <td>99</td>
+            <td>{LEVEL_TO_GAME_CONFIG.expert.height}</td>
+            <td>{LEVEL_TO_GAME_CONFIG.expert.width}</td>
+            <td>{LEVEL_TO_GAME_CONFIG.expert.mines}</td>
           </tr>
           <tr>
             <td>

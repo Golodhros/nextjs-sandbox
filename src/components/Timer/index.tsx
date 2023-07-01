@@ -6,9 +6,10 @@ const SECOND_IN_MILLISECONDS = 1000;
 
 type TimerProps = {
   isOn: boolean;
+  isReset: boolean;
 };
 
-const Timer = ({ isOn }: TimerProps) => {
+const Timer = ({ isOn, isReset }: TimerProps) => {
   const [seconds, setSeconds] = React.useState(0);
   const intervalId = React.useRef<NodeJS.Timeout | null>(null);
 
@@ -19,6 +20,15 @@ const Timer = ({ isOn }: TimerProps) => {
       }
     }
   }, [isOn]);
+
+  React.useEffect(() => {
+    if (isReset) {
+      if (intervalId.current) {
+        clearInterval(intervalId.current);
+      }
+      setSeconds(0);
+    }
+  }, [isReset]);
 
   React.useEffect(() => {
     // TODO: move out of SetInterval approach and into setTimeout (more accurate)
