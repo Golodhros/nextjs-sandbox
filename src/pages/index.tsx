@@ -36,6 +36,19 @@ function getCellClassFor(adjacentMines: number) {
   }
 }
 
+function getAdjancentIds(row: number, column: number): string[] {
+  return [
+    `r${row - 1}-c${column - 1}`,
+    `r${row - 1}-c${column}`,
+    `r${row - 1}-c${column + 1}`,
+    `r${row}-c${column - 1}`,
+    `r${row}-c${column + 1}`,
+    `r${row + 1}-c${column - 1}`,
+    `r${row + 1}-c${column}`,
+    `r${row + 1}-c${column + 1}`,
+  ];
+}
+
 function getBoardStateToRender(
   boardState: CellState[],
   gameConfig: GameConfig
@@ -91,16 +104,7 @@ function generateBoardGame(gameConfig: GameConfig): CellState[] {
     const currentCell = boardState[i];
     const currentRow = Math.floor(i / width);
     const currentColumn = i % width;
-    const adjacentCellIds = [
-      `r${currentRow - 1}-c${currentColumn - 1}`,
-      `r${currentRow - 1}-c${currentColumn}`,
-      `r${currentRow - 1}-c${currentColumn + 1}`,
-      `r${currentRow}-c${currentColumn - 1}`,
-      `r${currentRow}-c${currentColumn + 1}`,
-      `r${currentRow + 1}-c${currentColumn - 1}`,
-      `r${currentRow + 1}-c${currentColumn}`,
-      `r${currentRow + 1}-c${currentColumn + 1}`,
-    ];
+    const adjacentCellIds = getAdjancentIds(currentRow, currentColumn);
     const adjacentMinesCount = adjacentCellIds.filter((cellId) => {
       const cell = boardState.find((c) => c.id === cellId);
 
@@ -112,7 +116,7 @@ function generateBoardGame(gameConfig: GameConfig): CellState[] {
     }
   }
 
-  console.log('generated boardState: ', boardState);
+  console.log('generateBoardGame: ', boardState);
 
   return boardState;
 }
@@ -205,15 +209,18 @@ const Index = () => {
   const [gameConfig, setGameConfig] = useState<GameConfig>(
     LEVEL_TO_GAME_CONFIG.beginner
   );
-  const [boardState, setBoardState] = useState<CellState[]>(
-    generateBoardGame(gameConfig)
-  );
+  const [boardState, setBoardState] = useState<CellState[]>([]);
   const [numOfMines, setNumOfMines] = useState(gameConfig.mines);
 
+  // After every change in the board state, check if the game is won
   useEffect(() => {
-    console.log('boardState: ', boardState);
     setIsWon(checkVictory(boardState, gameConfig));
   }, [boardState]);
+
+  // Initial board state creation when loading the page
+  useEffect(() => {
+    setBoardState(generateBoardGame(gameConfig));
+  }, []);
 
   // TODO: Extract controls into a separate component
   const [isGameControlModalOpen, setIsGameControlModalOpen] = useState(false);
@@ -292,21 +299,16 @@ const Index = () => {
     });
     setBoardState(updatedBoardState);
   };
+
+  // TODO: Improve the releal logic so it matches closely the original game
+  // Right now, it stops at the adjacent of the clicked cells, without revealing the adjacent of the adjacent
   const handleCellAdjacentReveal = (id: string) => {
     if (!isOver) {
-      // Iterate through adjacent cells and reveal them if they are not mines
       const currentRow = Number(id.split('-')[0]?.slice(1));
       const currentColumn = Number(id.split('-')[1]?.slice(1));
-      const adjacentCellIds = [
-        `r${currentRow - 1}-c${currentColumn - 1}`,
-        `r${currentRow - 1}-c${currentColumn}`,
-        `r${currentRow - 1}-c${currentColumn + 1}`,
-        `r${currentRow}-c${currentColumn - 1}`,
-        `r${currentRow}-c${currentColumn + 1}`,
-        `r${currentRow + 1}-c${currentColumn - 1}`,
-        `r${currentRow + 1}-c${currentColumn}`,
-        `r${currentRow + 1}-c${currentColumn + 1}`,
-      ];
+      const adjacentCellIds = getAdjancentIds(currentRow, currentColumn);
+
+      // Iterate through adjacent cells and reveal them if they are not mines
       const newBoardState = boardState.map((cell) => {
         if (
           cell.id === id ||
