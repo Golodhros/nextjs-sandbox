@@ -200,6 +200,8 @@ function Cell({
 }
 const MemoizedCell = memo(Cell);
 
+// TODO: Extract strings into constants
+// TODO: Add unit tests to everything
 const Index = () => {
   const [isPressed, setIsPressed] = useState(false);
   const [isOver, setIsOver] = useState(false);

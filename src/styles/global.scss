@@ -1,5 +1,5 @@
 // TODO
-// -
+// - Move styles into component scoped files (css modules or scss files for each component)
 
 // Variables
 $font-stack: sans-serif;
@@ -242,8 +242,6 @@ div {
   border: 2px inset $white;
   padding: $unit-quarter;
 }
-.board-count {
-}
 .board-reset-btn {
   background-color: $silver;
   line-height: 0;
@@ -256,8 +254,6 @@ div {
   &:active {
     border: 2px inset $white;
   }
-}
-.board-timer {
 }
 .board-body {
   border: 2px inset $white;
@@ -309,8 +305,4 @@ div {
 }
 .modal-body {
   background-color: $grey-lighter;
-}
-
-/* GAME TABLE */
-.game-table {
 }
