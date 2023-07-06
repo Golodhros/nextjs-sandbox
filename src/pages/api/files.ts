@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 import type { APIResponseData, Data, FileTreeNode } from '../../types';
 
-const artificialDelay = 2000;
+const artificialDelay = 1000;
 
 const testData: FileTreeNode = {
   name: 'project',

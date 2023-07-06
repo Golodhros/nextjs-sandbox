@@ -1,1 +1,16 @@
 @import 'bootstrap/dist/css/bootstrap.min.css';
+
+
+.is-file {
+  padding-left: 20px;
+}
+.is-folder {
+  padding-left: 20px;
+}
+.is-expanded {
+}
+.is-collapsed {
+}
+.is-selected {
+  background-color: pink;
+}
