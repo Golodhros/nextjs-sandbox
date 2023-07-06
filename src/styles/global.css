@@ -21,3 +21,7 @@ a:hover {
 .content ul {
   @apply my-6;
 }
+
+.filter-panel {
+display: flex;
+}
