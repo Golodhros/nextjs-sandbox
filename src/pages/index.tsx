@@ -8,11 +8,11 @@ const Index = () => {
     <WebApp
       meta={
         <Meta
-          title="Marco Experiences"
-          description="Marco Experiences page description"
+          title="All In Bites"
+          description="All In Bites page description"
         />
       }
-      title="Marco Experiences Sandbox"
+      title="All In Bites Sandbox"
     >
       <p>Paragraph text</p>
       <Button variant="primary">Primary</Button>
