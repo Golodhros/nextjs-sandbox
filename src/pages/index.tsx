@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -32,13 +33,6 @@ const enhanceFileTree = (node: FileTreeNode): EnhancedFileTreeNode => {
     isExpanded: false,
     children: children && children.map((child) => enhanceFileTree(child)),
   };
-};
-
-const getClassForKind = (kind: string): string => {
-  if (kind === 'file') {
-    return 'is-file';
-  }
-  return 'is-folder';
 };
 
 type DirectoryButtonProps = {
@@ -130,6 +124,10 @@ const TreeNode = ({ data, level, onClick }: TreeNodeProps): JSX.Element => {
   const [isNodeExpanded, setIsNodeExpanded] = useState<boolean>(isExpanded);
   const [isNodeSelected, setIsNodeSelected] = useState<boolean>(isSelected);
 
+  useEffect(() => {
+    setIsNodeExpanded(isExpanded);
+  }, [isExpanded]);
+
   const handleNodeClick = () => {
     if (kind === 'directory') {
       setIsNodeExpanded(!isNodeExpanded);
@@ -148,7 +146,7 @@ const TreeNode = ({ data, level, onClick }: TreeNodeProps): JSX.Element => {
   const nextLevel = level + 1;
 
   return (
-    <div className={isNodeExpanded ? 'is-expanded' : 'is-collapsed'}>
+    <div>
       <Element
         level={level}
         name={name}
@@ -157,11 +155,9 @@ const TreeNode = ({ data, level, onClick }: TreeNodeProps): JSX.Element => {
         isNodeSelected={isNodeSelected}
       />
       {hasChildrenRendered &&
-        children.map((child) => (
-          <div
-            key={`${child.name}:${Math.random() * 1000}`}
-            className={getClassForKind(kind)}
-          >
+        children.map((child, idx) => (
+          // eslint-disable-next-line react/no-array-index-key
+          <div key={id + idx}>
             <TreeNode
               data={child}
               level={nextLevel}
@@ -180,7 +176,6 @@ const toggleIsSelectedInTreeState = (
   const { children } = tree;
 
   if (tree.id === id) {
-    // eslint-disable-next-line no-param-reassign
     tree.isSelected = !tree.isSelected;
   }
 
@@ -191,40 +186,90 @@ const toggleIsSelectedInTreeState = (
   }
 };
 
+// TODO: consolidate these two functions
+const expandAllInTreeState = (tree: EnhancedFileTreeNode) => {
+  const { children } = tree;
+
+  tree.isExpanded = true;
+  if (children) {
+    children.forEach((child) => {
+      expandAllInTreeState(child);
+    });
+  }
+
+  return tree;
+};
+const collapseAllInTreeState = (tree: EnhancedFileTreeNode) => {
+  const { children } = tree;
+
+  tree.isExpanded = false;
+  if (children) {
+    children.forEach((child) => {
+      collapseAllInTreeState(child);
+    });
+  }
+
+  return tree;
+};
+
 type FileManagerProps = {
-  isLoading: boolean;
   data: FileTreeNode;
 };
-const FileManager: React.FC<FileManagerProps> = ({ isLoading, data }) => {
+
+// TODO
+// - Move tree structure into an array of objects for better performance and easier manipulation
+const FileManager: React.FC<FileManagerProps> = ({ data }) => {
   const [enhancedFileTree, setEnhancedFileTree] =
     useState<EnhancedFileTreeNode>(enhanceFileTree(data));
 
-  // TODO: make it a skeleton component
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
   const handleNodeClick = (id: string) => {
-    console.log('node clicked', id);
     setEnhancedFileTree((prev) => {
       toggleIsSelectedInTreeState(prev, id);
 
-      console.log('prev', prev);
-
       return prev;
+    });
+  };
+
+  const handleExpandAll = () => {
+    setEnhancedFileTree((prev) => {
+      expandAllInTreeState(prev);
+
+      return { ...prev };
+    });
+  };
+
+  const handleCollapseAll = () => {
+    setEnhancedFileTree((prev) => {
+      collapseAllInTreeState(prev);
+
+      return { ...prev };
     });
   };
 
   return (
     <div>
       <h2 className="text-2xl">File Manager</h2>
+      <div className="my-1 flex">
+        <button
+          className="rounded border border-sky-50 bg-sky-500 px-2 hover:bg-sky-100"
+          type="button"
+          onClick={handleExpandAll}
+        >
+          Expand all
+        </button>
+        <button
+          className="rounded border border-sky-50 bg-sky-700 px-2 text-white hover:bg-sky-100 hover:text-gray-800"
+          type="button"
+          onClick={handleCollapseAll}
+        >
+          Collapse all
+        </button>
+      </div>
       <TreeNode data={enhancedFileTree} level={0} onClick={handleNodeClick} />
     </div>
   );
 };
 
-// TODO
-// -
 const Index = () => {
   const [data, setData] = useState<FileTreeNode | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -248,7 +293,8 @@ const Index = () => {
       }
       title="All In Bites Sandbox"
     >
-      {data && <FileManager isLoading={isLoading} data={data} />}
+      {isLoading && <div>Loading...</div>}
+      {data && <FileManager data={data} />}
     </Main>
   );
 };

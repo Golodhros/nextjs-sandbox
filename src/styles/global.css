@@ -20,14 +20,3 @@ a:hover {
 .content ul {
   @apply my-6;
 }
-.is-file {
-}
-.is-folder {
-}
-.is-expanded {
-}
-.is-collapsed {
-}
-.is-selected {
-  background-color: pink;
-}
