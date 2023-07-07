@@ -1,11 +1,28 @@
-@import 'bootstrap/dist/css/bootstrap.min.css';
+/* Check https://tailwindcomponents.com/cheatsheet/ for reference */
+@tailwind base;
 
+a {
+  @apply text-blue-700;
+}
 
+a:hover {
+  @apply border-b-2 border-blue-700;
+}
+
+@tailwind components;
+
+@tailwind utilities;
+
+.content p {
+  @apply my-6;
+}
+
+.content ul {
+  @apply my-6;
+}
 .is-file {
-  padding-left: 20px;
 }
 .is-folder {
-  padding-left: 20px;
 }
 .is-expanded {
 }

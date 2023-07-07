@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 
 import { Meta } from '@/layouts/Meta';
-import { WebApp } from '@/templates/WebApp';
+import { Main } from '@/templates/Main';
 
 import type { FileTreeNode } from '../types';
 
@@ -9,12 +10,14 @@ const API_ENDPOINT = '/api/files';
 const RIGHT_CHEVRON_PATH = '/assets/icons/right-chevron.svg';
 const DOWN_CHEVRON_PATH = '/assets/icons/down-chevron.svg';
 const CHEVRON_SIZE = '16px';
+const PADDING_INDENT_MULTIPLIER = 16;
 
 export type EnhancedFileTreeNode = {
   name: string;
   kind: 'directory' | 'file';
   isSelected: boolean;
   isExpanded: boolean;
+  id: string;
   children?: EnhancedFileTreeNode[];
 };
 
@@ -22,6 +25,7 @@ const enhanceFileTree = (node: FileTreeNode): EnhancedFileTreeNode => {
   const { name, kind, children } = node;
 
   return {
+    id: uuidv4(),
     name,
     kind,
     isSelected: false,
@@ -37,25 +41,24 @@ const getClassForKind = (kind: string): string => {
   return 'is-folder';
 };
 
-type TreeNodeProps = {
-  data: EnhancedFileTreeNode;
-};
-
 type DirectoryButtonProps = {
-  isSelected: boolean;
+  isNodeSelected: boolean;
   name: string;
   onNodeClick: () => void;
   isNodeExpanded: boolean;
+  level: number;
 };
 
 const DirectoryButton = ({
-  isSelected,
+  isNodeSelected,
   name,
   onNodeClick,
   isNodeExpanded,
+  level,
 }: DirectoryButtonProps): JSX.Element => {
   const expansionMarker = isNodeExpanded ? (
     <img
+      className="px-1"
       src={DOWN_CHEVRON_PATH}
       width={CHEVRON_SIZE}
       height={CHEVRON_SIZE}
@@ -63,6 +66,7 @@ const DirectoryButton = ({
     />
   ) : (
     <img
+      className="px-1"
       src={RIGHT_CHEVRON_PATH}
       width={CHEVRON_SIZE}
       height={CHEVRON_SIZE}
@@ -73,7 +77,10 @@ const DirectoryButton = ({
 
   return (
     <button
-      className={isSelected ? 'is-selected' : ''}
+      style={{ paddingLeft: `${level * PADDING_INDENT_MULTIPLIER}px` }}
+      className={`flex w-full content-center border border-white hover:bg-sky-100 ${
+        isNodeSelected ? 'border border-sky-50 bg-sky-100' : ''
+      }`}
       onClick={onNodeClick}
       type="button"
     >
@@ -83,43 +90,71 @@ const DirectoryButton = ({
   );
 };
 
-type FileElementProps = {
-  isSelected: boolean;
+type FileButtonProps = {
+  isNodeSelected: boolean;
+  onNodeClick: () => void;
   name: string;
+  level: number;
 };
 
-const FileElement = ({ isSelected, name }: FileElementProps): JSX.Element => {
+const FileButton = ({
+  isNodeSelected,
+  name,
+  onNodeClick,
+  level,
+}: FileButtonProps): JSX.Element => {
   const icon = '📄';
 
   return (
-    <span className={isSelected ? 'is-selected' : ''}>
+    <button
+      style={{ paddingLeft: `${level * PADDING_INDENT_MULTIPLIER}px` }}
+      className={`flex w-full content-center border border-white hover:bg-sky-100 ${
+        isNodeSelected ? 'border border-sky-50 bg-sky-100' : ''
+      }`}
+      onClick={onNodeClick}
+      type="button"
+    >
       {icon} {name}
-    </span>
+    </button>
   );
 };
 
-const TreeNode = ({ data }: TreeNodeProps): JSX.Element => {
-  const { name, kind, children, isExpanded, isSelected } = data;
+type TreeNodeProps = {
+  data: EnhancedFileTreeNode;
+  level: number;
+  onClick?: (id: string) => void;
+};
+
+const TreeNode = ({ data, level, onClick }: TreeNodeProps): JSX.Element => {
+  const { name, kind, children, isExpanded, isSelected, id } = data;
   const [isNodeExpanded, setIsNodeExpanded] = useState<boolean>(isExpanded);
+  const [isNodeSelected, setIsNodeSelected] = useState<boolean>(isSelected);
 
   const handleNodeClick = () => {
     if (kind === 'directory') {
       setIsNodeExpanded(!isNodeExpanded);
     }
+    setIsNodeSelected(!isNodeSelected);
+    onClick?.(id);
+  };
+  const handleChildClick = (childId: string) => {
+    onClick?.(childId);
   };
 
   const hasChildren = children && children.length > 0;
   const isExpandable = kind === 'directory' && hasChildren;
   const hasChildrenRendered = isExpandable && isNodeExpanded;
-  const Element = kind === 'directory' ? DirectoryButton : FileElement;
+  const Element = kind === 'directory' ? DirectoryButton : FileButton;
+  const nextLevel = level + 1;
 
   return (
     <div className={isNodeExpanded ? 'is-expanded' : 'is-collapsed'}>
       <Element
+        level={level}
         name={name}
-        isSelected={isSelected}
         onNodeClick={handleNodeClick}
         isNodeExpanded={isNodeExpanded}
+        isNodeSelected={isNodeSelected}
       />
       {hasChildrenRendered &&
         children.map((child) => (
@@ -127,11 +162,33 @@ const TreeNode = ({ data }: TreeNodeProps): JSX.Element => {
             key={`${child.name}:${Math.random() * 1000}`}
             className={getClassForKind(kind)}
           >
-            <TreeNode data={child} />
+            <TreeNode
+              data={child}
+              level={nextLevel}
+              onClick={handleChildClick}
+            />
           </div>
         ))}
     </div>
   );
+};
+
+const toggleIsSelectedInTreeState = (
+  tree: EnhancedFileTreeNode,
+  id: string
+) => {
+  const { children } = tree;
+
+  if (tree.id === id) {
+    // eslint-disable-next-line no-param-reassign
+    tree.isSelected = !tree.isSelected;
+  }
+
+  if (children) {
+    children.forEach((child) => {
+      toggleIsSelectedInTreeState(child, id);
+    });
+  }
 };
 
 type FileManagerProps = {
@@ -139,17 +196,29 @@ type FileManagerProps = {
   data: FileTreeNode;
 };
 const FileManager: React.FC<FileManagerProps> = ({ isLoading, data }) => {
+  const [enhancedFileTree, setEnhancedFileTree] =
+    useState<EnhancedFileTreeNode>(enhanceFileTree(data));
+
   // TODO: make it a skeleton component
   if (isLoading) {
     return <div>Loading...</div>;
   }
 
-  const enhancedFileTree = enhanceFileTree(data);
+  const handleNodeClick = (id: string) => {
+    console.log('node clicked', id);
+    setEnhancedFileTree((prev) => {
+      toggleIsSelectedInTreeState(prev, id);
+
+      console.log('prev', prev);
+
+      return prev;
+    });
+  };
 
   return (
     <div>
-      <h2 className="h2">File Manager</h2>
-      <TreeNode data={enhancedFileTree} />
+      <h2 className="text-2xl">File Manager</h2>
+      <TreeNode data={enhancedFileTree} level={0} onClick={handleNodeClick} />
     </div>
   );
 };
@@ -169,10 +238,8 @@ const Index = () => {
       });
   }, []);
 
-  console.log('data', data);
-
   return (
-    <WebApp
+    <Main
       meta={
         <Meta
           title="All In Bites"
@@ -182,7 +249,7 @@ const Index = () => {
       title="All In Bites Sandbox"
     >
       {data && <FileManager isLoading={isLoading} data={data} />}
-    </WebApp>
+    </Main>
   );
 };
 
